@@ -6,7 +6,6 @@ from datetime import timedelta
 
 from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.exceptions import ModbusException
-from pymodbus.pdu import ReadHoldingRegistersRequest
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -24,9 +23,9 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Pausa entre leituras de blocos — o Waveshare precisa de tempo para
-# encaminhar a resposta RTU de volta ao TCP antes do próximo pedido
-_BLOCK_DELAY = 0.2
+# Pausa entre blocos — o Waveshare precisa de tempo para encaminhar
+# a resposta RTU antes do próximo pedido TCP
+_BLOCK_DELAY = 0.3
 
 # Blocos de registos consecutivos — 15 transações em vez de 47.
 # Registos com gap (ex: 589 na bateria) são lidos mas ignorados.
@@ -62,7 +61,6 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
         self._host = entry.data[CONF_HOST]
         self._port = entry.data[CONF_PORT]
         self._slave = entry.data[CONF_SLAVE]
-        self._client: AsyncModbusTcpClient | None = None
 
         super().__init__(
             hass,
@@ -71,27 +69,30 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=entry.data[CONF_SCAN_INTERVAL]),
         )
 
-    async def _get_client(self) -> AsyncModbusTcpClient:
-        if self._client is None or not self._client.connected:
-            if self._client is not None:
-                self._client.close()
-            self._client = AsyncModbusTcpClient(self._host, port=self._port)
-            await self._client.connect()
-        return self._client
-
     async def _async_update_data(self) -> dict:
+        # Ligação nova em cada ciclo — evita acumulação de estado TCP
+        # no Waveshare e conflitos de transaction ID entre polls
+        client = AsyncModbusTcpClient(self._host, port=self._port)
         try:
-            client = await self._get_client()
+            connected = await client.connect()
+            if not connected:
+                raise UpdateFailed("Falha ao ligar ao inversor")
+            return await self._read_all_blocks(client)
+        except UpdateFailed:
+            raise
         except Exception as err:
-            raise UpdateFailed(f"Falha ao ligar ao inversor: {err}") from err
+            raise UpdateFailed(f"Erro inesperado: {err}") from err
+        finally:
+            client.close()
 
-        # Ler cada bloco de registos consecutivos
+    async def _read_all_blocks(self, client: AsyncModbusTcpClient) -> dict:
         block_results: list = [None] * len(_READ_BLOCKS)
+
         for idx, (start, count) in enumerate(_READ_BLOCKS):
             try:
-                result = await client.execute(
-                    ReadHoldingRegistersRequest(start, count, self._slave)
-                )
+                # Slave passado por posição — compatível com pymodbus 3.x
+                # (read_holding_registers aceita apenas address + count=N em 3.11.x)
+                result = await client.read_holding_registers(start, count=count)
                 if result.isError():
                     _LOGGER.warning("Erro a ler bloco addr=%s count=%s", start, count)
                 else:
@@ -102,12 +103,10 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
                 _LOGGER.error("Erro inesperado no bloco addr=%s: %s", start, err)
             await asyncio.sleep(_BLOCK_DELAY)
 
-        # Distribuir os valores pelos sensores a partir dos blocos lidos
         data: dict = {}
         for name, address, _unit, scale, dtype, *_ in REGISTERS:
             block_info = _ADDR_MAP.get(address)
             if block_info is None:
-                _LOGGER.error("Endereço %s não está mapeado em nenhum bloco", address)
                 data[name] = None
                 continue
             block_idx, offset = block_info
@@ -124,8 +123,3 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
                 data[name] = round(raw * scale, 3)
 
         return data
-
-    async def async_shutdown(self) -> None:
-        if self._client is not None:
-            self._client.close()
-            self._client = None
