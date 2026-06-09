@@ -101,6 +101,13 @@ class DeyeModbusOptionsFlow(config_entries.OptionsFlow):
             if error:
                 errors["base"] = error
             else:
+                # Agendar reload antes de retornar para que o HA aplique
+                # as novas definições logo após guardar as opções.
+                # Corre na próxima iteração do event loop, depois de
+                # entry.options ser actualizado pelo flow manager.
+                self.hass.async_create_task(
+                    self.hass.config_entries.async_reload(self._entry.entry_id)
+                )
                 return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
