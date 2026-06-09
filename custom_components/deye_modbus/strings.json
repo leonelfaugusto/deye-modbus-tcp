@@ -13,8 +13,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Não foi possível ligar ao dispositivo. Verifica o IP e a porta.",
-      "modbus_error": "Ligação estabelecida mas falha na leitura dos registos. Verifica o Slave ID e a fiação."
+      "cannot_connect": "Não foi possível ligar ao dispositivo. Verifica o IP e a porta."
     },
     "abort": {
       "already_configured": "Este inversor já está configurado."

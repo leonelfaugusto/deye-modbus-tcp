@@ -13,8 +13,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Could not connect to the device. Check the IP address and port.",
-      "modbus_error": "Connected but failed to read Modbus registers. Check the Slave ID and wiring."
+      "cannot_connect": "Could not connect to the device. Check the IP address and port."
     },
     "abort": {
       "already_configured": "This inverter is already configured."

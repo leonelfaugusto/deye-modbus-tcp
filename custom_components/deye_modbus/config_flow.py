@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -28,25 +29,16 @@ STEP_SCHEMA = vol.Schema(
 )
 
 
-async def _test_connection(host: str, port: int, slave: int) -> str | None:
-    """Tenta ligar e ler o registo 500 (Run State). Devolve mensagem de erro ou None."""
-    from pymodbus.client import AsyncModbusTcpClient
-    from pymodbus.exceptions import ModbusException
-
-    client = AsyncModbusTcpClient(host, port=port)
+async def _test_connection(host: str, port: int) -> str | None:
+    """Verifica apenas se o TCP está acessível. Devolve chave de erro ou None."""
     try:
-        connected = await client.connect()
-        if not connected:
-            return "cannot_connect"
-        result = await client.read_holding_registers(address=500, count=1, slave=slave)
-        if result.isError():
-            return "modbus_error"
-    except ModbusException:
-        return "modbus_error"
-    except Exception:
+        _, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, port), timeout=5.0
+        )
+        writer.close()
+        await writer.wait_closed()
+    except (OSError, asyncio.TimeoutError):
         return "cannot_connect"
-    finally:
-        client.close()
     return None
 
 
@@ -60,7 +52,6 @@ class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             error = await _test_connection(
                 user_input[CONF_HOST],
                 user_input[CONF_PORT],
-                user_input[CONF_SLAVE],
             )
             if error:
                 errors["base"] = error
