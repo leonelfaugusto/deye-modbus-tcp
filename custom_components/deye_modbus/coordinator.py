@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.exceptions import ModbusException
+from pymodbus.pdu import ReadHoldingRegistersRequest
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -88,8 +89,8 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
         block_results: list = [None] * len(_READ_BLOCKS)
         for idx, (start, count) in enumerate(_READ_BLOCKS):
             try:
-                result = await client.read_holding_registers(
-                    start, count, self._slave
+                result = await client.execute(
+                    ReadHoldingRegistersRequest(start, count, self._slave)
                 )
                 if result.isError():
                     _LOGGER.warning("Erro a ler bloco addr=%s count=%s", start, count)
