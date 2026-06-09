@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 
-import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.selector import (
@@ -10,6 +9,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
     SelectSelectorMode,
 )
+import voluptuous as vol
 
 from .const import (
     CONF_HOST,
@@ -48,12 +48,10 @@ STEP_SCHEMA = vol.Schema(
 async def _test_connection(host: str, port: int) -> str | None:
     """Check TCP reachability. Returns an error key or None on success."""
     try:
-        _, writer = await asyncio.wait_for(
-            asyncio.open_connection(host, port), timeout=5.0
-        )
+        _, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=5.0)
         writer.close()
         await writer.wait_closed()
-    except (OSError, asyncio.TimeoutError):
+    except (TimeoutError, OSError):
         return "cannot_connect"
     return None
 
@@ -74,9 +72,7 @@ class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if error:
                 errors["base"] = error
             else:
-                await self.async_set_unique_id(
-                    f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}"
-                )
+                await self.async_set_unique_id(f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}")
                 self._abort_if_unique_id_configured()
                 inv = INVERTERS[user_input[CONF_INVERTER]]
                 return self.async_create_entry(
@@ -86,9 +82,7 @@ class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=self.add_suggested_values_to_schema(
-                STEP_SCHEMA, user_input or {}
-            ),
+            data_schema=self.add_suggested_values_to_schema(STEP_SCHEMA, user_input or {}),
             errors=errors,
         )
 
@@ -111,9 +105,7 @@ class DeyeModbusOptionsFlow(config_entries.OptionsFlow):
             else:
                 # Schedule reload so the coordinator is recreated with the new settings.
                 # Runs on the next event loop iteration, after entry.options is updated.
-                self.hass.async_create_task(
-                    self.hass.config_entries.async_reload(self._entry.entry_id)
-                )
+                self.hass.async_create_task(self.hass.config_entries.async_reload(self._entry.entry_id))
                 return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(

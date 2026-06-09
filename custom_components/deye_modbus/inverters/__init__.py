@@ -5,6 +5,7 @@ To add a new inverter:
 2. Define an INVERTER = InverterDef(...) object
 3. Import it here and append it to _ALL
 """
+
 from __future__ import annotations
 
 from ..inverter_def import InverterDef

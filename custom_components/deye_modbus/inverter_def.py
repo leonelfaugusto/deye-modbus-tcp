@@ -1,4 +1,5 @@
 """Base types for inverter definitions."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,7 +13,7 @@ class RegisterDef(NamedTuple):
     address: int
     unit: str
     scale: float
-    dtype: str          # "uint16" or "int16"
+    dtype: str  # "uint16" or "int16"
     device_class: str | None
     state_class: str | None
     icon: str
@@ -45,12 +46,12 @@ class InverterDef:
     computed_registers: derived sensors calculated after the Modbus read.
     """
 
-    key: str                        # unique slug, e.g. "deye_sun8k_sg05lp3"
-    name: str                       # displayed in the config flow dropdown
+    key: str  # unique slug, e.g. "deye_sun8k_sg05lp3"
+    name: str  # displayed in the config flow dropdown
     manufacturer: str
-    model: str                      # exact model number, e.g. "SUN-8K-SG05LP3-EU-SM2"
+    model: str  # exact model number, e.g. "SUN-8K-SG05LP3-EU-SM2"
     registers: list[RegisterDef]
-    temp_registers: set[int]        # addresses using Deye temperature offset: (raw - 1000) * scale
+    temp_registers: set[int]  # addresses using Deye temperature offset: (raw - 1000) * scale
     read_blocks: list[tuple[int, int]] = field(default_factory=list)
     computed_registers: list[ComputedRegisterDef] = field(default_factory=list)
 
@@ -67,9 +68,7 @@ class InverterDef:
         }
 
 
-def _auto_blocks(
-    registers: list[RegisterDef], max_gap: int = 5
-) -> list[tuple[int, int]]:
+def _auto_blocks(registers: list[RegisterDef], max_gap: int = 5) -> list[tuple[int, int]]:
     """Group register addresses into contiguous read blocks.
 
     Addresses within max_gap of each other are merged into a single block.

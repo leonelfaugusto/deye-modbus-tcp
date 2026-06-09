@@ -40,8 +40,7 @@ async def async_setup_entry(
     coordinator: DeyeModbusCoordinator = hass.data[DOMAIN][entry.entry_id]
     inv = coordinator.inverter
     async_add_entities(
-        DeyeModbusSensor(coordinator, entry, reg)
-        for reg in [*inv.registers, *inv.computed_registers]
+        DeyeModbusSensor(coordinator, entry, reg) for reg in [*inv.registers, *inv.computed_registers]
     )
 
 

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from datetime import timedelta
-
-from pymodbus.client import AsyncModbusTcpClient
-from pymodbus.exceptions import ModbusException
+import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from pymodbus.client import AsyncModbusTcpClient
+from pymodbus.exceptions import ModbusException
 
 from .const import (
     CONF_HOST,
@@ -108,11 +107,7 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
 
         # Computed (derived) sensors — calculated after all Modbus reads
         for computed in inv.computed_registers:
-            values = [
-                data[src]
-                for src in computed.sources
-                if data.get(src) is not None
-            ]
+            values = [data[src] for src in computed.sources if data.get(src) is not None]
             data[computed.name] = round(sum(values), 3) if values else None
 
         return data
