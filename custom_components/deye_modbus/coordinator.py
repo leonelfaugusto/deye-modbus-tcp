@@ -58,15 +58,17 @@ _ADDR_MAP: dict[int, tuple[int, int]] = {
 
 class DeyeModbusCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        self._host = entry.data[CONF_HOST]
-        self._port = entry.data[CONF_PORT]
-        self._slave = entry.data[CONF_SLAVE]
+        # options sobrepõem data — permite alterar definições sem recriar entidades
+        opts = {**entry.data, **entry.options}
+        self._host = opts[CONF_HOST]
+        self._port = opts[CONF_PORT]
+        self._slave = opts[CONF_SLAVE]
 
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=entry.data[CONF_SCAN_INTERVAL]),
+            update_interval=timedelta(seconds=opts[CONF_SCAN_INTERVAL]),
         )
 
     async def _async_update_data(self) -> dict:

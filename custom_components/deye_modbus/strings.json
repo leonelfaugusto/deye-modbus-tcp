@@ -18,5 +18,22 @@
     "abort": {
       "already_configured": "Este inversor já está configurado."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Alterar configuração — Deye Modbus",
+        "description": "Altera as definições de ligação ao inversor. As entidades existentes são mantidas.",
+        "data": {
+          "host": "Host (endereço IP)",
+          "port": "Porta TCP",
+          "slave": "Modbus Slave ID",
+          "scan_interval": "Intervalo de polling (segundos)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Não foi possível ligar ao dispositivo. Verifica o IP e a porta."
+    }
   }
 }

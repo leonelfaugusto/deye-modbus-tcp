@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntry
 
 from .const import (
     CONF_HOST,
@@ -45,6 +47,11 @@ async def _test_connection(host: str, port: int) -> str | None:
 class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
+    @staticmethod
+    @config_entries.callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> DeyeModbusOptionsFlow:
+        return DeyeModbusOptionsFlow(config_entry)
+
     async def async_step_user(self, user_input=None):
         errors: dict[str, str] = {}
 
@@ -70,5 +77,34 @@ class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=self.add_suggested_values_to_schema(
                 STEP_SCHEMA, user_input or {}
             ),
+            errors=errors,
+        )
+
+
+class DeyeModbusOptionsFlow(config_entries.OptionsFlow):
+    """Permite alterar as definições após a integração estar configurada."""
+
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        self._entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        errors: dict[str, str] = {}
+
+        # Valores actuais: options sobrepõem data (retrocompatibilidade)
+        current = {**self._entry.data, **self._entry.options}
+
+        if user_input is not None:
+            error = await _test_connection(
+                user_input[CONF_HOST],
+                user_input[CONF_PORT],
+            )
+            if error:
+                errors["base"] = error
+            else:
+                return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(STEP_SCHEMA, current),
             errors=errors,
         )

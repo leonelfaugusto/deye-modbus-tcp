@@ -18,5 +18,22 @@
     "abort": {
       "already_configured": "This inverter is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update Configuration — Deye Modbus",
+        "description": "Change the inverter connection settings. Existing entities are preserved.",
+        "data": {
+          "host": "Host (IP address)",
+          "port": "TCP Port",
+          "slave": "Modbus Slave ID",
+          "scan_interval": "Polling interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to the device. Check the IP address and port."
+    }
   }
 }
