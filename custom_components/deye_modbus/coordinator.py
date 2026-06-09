@@ -89,7 +89,7 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
         for idx, (start, count) in enumerate(_READ_BLOCKS):
             try:
                 result = await client.read_holding_registers(
-                    address=start, count=count, slave=self._slave
+                    start, count, self._slave
                 )
                 if result.isError():
                     _LOGGER.warning("Erro a ler bloco addr=%s count=%s", start, count)
