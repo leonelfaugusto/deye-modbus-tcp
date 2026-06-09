@@ -11,8 +11,9 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_HOST, DOMAIN, REGISTERS
+from .const import DOMAIN
 from .coordinator import DeyeModbusCoordinator
+from .inverter_def import RegisterDef
 
 _DEVICE_CLASS_MAP = {
     "voltage": SensorDeviceClass.VOLTAGE,
@@ -38,7 +39,8 @@ async def async_setup_entry(
 ) -> None:
     coordinator: DeyeModbusCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
-        DeyeModbusSensor(coordinator, entry, reg) for reg in REGISTERS
+        DeyeModbusSensor(coordinator, entry, reg)
+        for reg in coordinator.inverter.registers
     )
 
 
@@ -47,24 +49,24 @@ class DeyeModbusSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: DeyeModbusCoordinator,
         entry: ConfigEntry,
-        reg: tuple,
+        reg: RegisterDef,
     ) -> None:
         super().__init__(coordinator)
-        name, _address, unit, _scale, _dtype, device_class, state_class, icon = reg
+        inv = coordinator.inverter
 
-        self._reg_name = name
-        self._attr_name = f"Deye {name}"
-        self._attr_unique_id = f"{entry.entry_id}_{name.lower().replace(' ', '_')}"
-        self._attr_native_unit_of_measurement = unit or None
-        self._attr_icon = icon
-        self._attr_device_class = _DEVICE_CLASS_MAP.get(device_class) if device_class else None
-        self._attr_state_class = _STATE_CLASS_MAP.get(state_class) if state_class else None
+        self._reg_name = reg.name
+        self._attr_name = f"Deye {reg.name}"
+        self._attr_unique_id = f"{entry.entry_id}_{reg.name.lower().replace(' ', '_')}"
+        self._attr_native_unit_of_measurement = reg.unit or None
+        self._attr_icon = reg.icon
+        self._attr_device_class = _DEVICE_CLASS_MAP.get(reg.device_class) if reg.device_class else None
+        self._attr_state_class = _STATE_CLASS_MAP.get(reg.state_class) if reg.state_class else None
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name="Deye Inverter",
-            manufacturer="Deye",
-            model="SUN-8K-SG05LP3-EU-SM2",
-            configuration_url=f"http://{entry.data[CONF_HOST]}",
+            name=f"{inv.manufacturer} Inverter",
+            manufacturer=inv.manufacturer,
+            model=inv.model,
+            configuration_url=f"http://{coordinator.host}",
         )
 
     @property

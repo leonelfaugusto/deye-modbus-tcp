@@ -13,56 +13,28 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import (
     CONF_HOST,
+    CONF_INVERTER,
     CONF_PORT,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE,
+    DEFAULT_INVERTER,
     DOMAIN,
-    REGISTERS,
-    TEMP_REGISTERS,
 )
+from .inverter_def import InverterDef
+from .inverters import INVERTERS
 
 _LOGGER = logging.getLogger(__name__)
 
-# Pausa entre blocos — o Waveshare precisa de tempo para encaminhar
-# a resposta RTU antes do próximo pedido TCP
 _BLOCK_DELAY = 0.3
-
-# Blocos de registos consecutivos — 15 transações em vez de 47.
-# Registos com gap (ex: 589 na bateria) são lidos mas ignorados.
-# (endereço_inicial, count)
-_READ_BLOCKS: list[tuple[int, int]] = [
-    (500, 1),   # Run State
-    (514, 2),   # Today Battery Charge / Discharge
-    (520, 2),   # Today Grid Buy / Sell
-    (526, 1),   # Today Load
-    (529, 1),   # Today Generation
-    (540, 2),   # DC Transformer Temp / Heat Sink Temp
-    (586, 6),   # Battery: Temp 586, Voltage 587, SOC 588, (589 gap), Power 590, Current 591
-    (598, 3),   # Grid L1/L2/L3 Voltage
-    (609, 1),   # Grid Frequency
-    (613, 7),   # External CT (613–619)
-    (622, 4),   # Grid L1/L2/L3 Power + Total
-    (627, 3),   # Inverter L1/L2/L3 Voltage
-    (633, 4),   # Inverter L1/L2/L3 Power + Total
-    (650, 4),   # Load L1/L2/L3 Power + Total
-    (672, 8),   # PV1–PV4 Power + PV1/PV2 Voltage/Current
-]
-
-# Mapa endereço → (índice do bloco, offset dentro do bloco)
-_ADDR_MAP: dict[int, tuple[int, int]] = {
-    start + offset: (block_idx, offset)
-    for block_idx, (start, count) in enumerate(_READ_BLOCKS)
-    for offset in range(count)
-}
 
 
 class DeyeModbusCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        # options sobrepõem data — permite alterar definições sem recriar entidades
         opts = {**entry.data, **entry.options}
-        self._host = opts[CONF_HOST]
-        self._port = opts[CONF_PORT]
-        self._slave = opts[CONF_SLAVE]
+        self._host: str = opts[CONF_HOST]
+        self._port: int = opts[CONF_PORT]
+        self._slave: int = opts[CONF_SLAVE]
+        self._inverter: InverterDef = INVERTERS[opts.get(CONF_INVERTER, DEFAULT_INVERTER)]
 
         super().__init__(
             hass,
@@ -71,9 +43,15 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=opts[CONF_SCAN_INTERVAL]),
         )
 
+    @property
+    def inverter(self) -> InverterDef:
+        return self._inverter
+
+    @property
+    def host(self) -> str:
+        return self._host
+
     async def _async_update_data(self) -> dict:
-        # Ligação nova em cada ciclo — evita acumulação de estado TCP
-        # no Waveshare e conflitos de transaction ID entre polls
         client = AsyncModbusTcpClient(self._host, port=self._port)
         try:
             connected = await client.connect()
@@ -88,12 +66,11 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
             client.close()
 
     async def _read_all_blocks(self, client: AsyncModbusTcpClient) -> dict:
-        block_results: list = [None] * len(_READ_BLOCKS)
+        inv = self._inverter
+        block_results: list = [None] * len(inv.read_blocks)
 
-        for idx, (start, count) in enumerate(_READ_BLOCKS):
+        for idx, (start, count) in enumerate(inv.read_blocks):
             try:
-                # Slave passado por posição — compatível com pymodbus 3.x
-                # (read_holding_registers aceita apenas address + count=N em 3.11.x)
                 result = await client.read_holding_registers(start, count=count)
                 if result.isError():
                     _LOGGER.warning("Erro a ler bloco addr=%s count=%s", start, count)
@@ -106,22 +83,22 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
             await asyncio.sleep(_BLOCK_DELAY)
 
         data: dict = {}
-        for name, address, _unit, scale, dtype, *_ in REGISTERS:
-            block_info = _ADDR_MAP.get(address)
+        for reg in inv.registers:
+            block_info = inv.addr_map.get(reg.address)
             if block_info is None:
-                data[name] = None
+                data[reg.name] = None
                 continue
             block_idx, offset = block_info
             result = block_results[block_idx]
             if result is None:
-                data[name] = None
+                data[reg.name] = None
                 continue
             raw = result.registers[offset]
-            if dtype == "int16" and raw > 32767:
+            if reg.dtype == "int16" and raw > 32767:
                 raw -= 65536
-            if address in TEMP_REGISTERS:
-                data[name] = round((raw - 1000) * scale, 1)
+            if reg.address in inv.temp_registers:
+                data[reg.name] = round((raw - 1000) * reg.scale, 1)
             else:
-                data[name] = round(raw * scale, 3)
+                data[reg.name] = round(raw * reg.scale, 3)
 
         return data

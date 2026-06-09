@@ -3,24 +3,38 @@ from __future__ import annotations
 import asyncio
 
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 from .const import (
     CONF_HOST,
+    CONF_INVERTER,
     CONF_PORT,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE,
     DEFAULT_HOST,
+    DEFAULT_INVERTER,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE,
     DOMAIN,
 )
+from .inverters import INVERTERS
 
+# Schema partilhado pelo config flow e pelo options flow
 STEP_SCHEMA = vol.Schema(
     {
+        vol.Required(CONF_INVERTER, default=DEFAULT_INVERTER): SelectSelector(
+            SelectSelectorConfig(
+                options=[{"value": k, "label": v.name} for k, v in INVERTERS.items()],
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        ),
         vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
         vol.Required(CONF_PORT, default=DEFAULT_PORT): vol.All(int, vol.Range(min=1, max=65535)),
         vol.Required(CONF_SLAVE, default=DEFAULT_SLAVE): vol.All(int, vol.Range(min=1, max=247)),
@@ -32,7 +46,7 @@ STEP_SCHEMA = vol.Schema(
 
 
 async def _test_connection(host: str, port: int) -> str | None:
-    """Verifica apenas se o TCP está acessível. Devolve chave de erro ou None."""
+    """Verifica se o TCP está acessível. Devolve chave de erro ou None."""
     try:
         _, writer = await asyncio.wait_for(
             asyncio.open_connection(host, port), timeout=5.0
@@ -56,10 +70,7 @@ class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            error = await _test_connection(
-                user_input[CONF_HOST],
-                user_input[CONF_PORT],
-            )
+            error = await _test_connection(user_input[CONF_HOST], user_input[CONF_PORT])
             if error:
                 errors["base"] = error
             else:
@@ -67,8 +78,9 @@ class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}"
                 )
                 self._abort_if_unique_id_configured()
+                inv = INVERTERS[user_input[CONF_INVERTER]]
                 return self.async_create_entry(
-                    title=f"Deye @ {user_input[CONF_HOST]}",
+                    title=f"{inv.name} @ {user_input[CONF_HOST]}",
                     data=user_input,
                 )
 
@@ -89,22 +101,13 @@ class DeyeModbusOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         errors: dict[str, str] = {}
-
-        # Valores actuais: options sobrepõem data (retrocompatibilidade)
         current = {**self._entry.data, **self._entry.options}
 
         if user_input is not None:
-            error = await _test_connection(
-                user_input[CONF_HOST],
-                user_input[CONF_PORT],
-            )
+            error = await _test_connection(user_input[CONF_HOST], user_input[CONF_PORT])
             if error:
                 errors["base"] = error
             else:
-                # Agendar reload antes de retornar para que o HA aplique
-                # as novas definições logo após guardar as opções.
-                # Corre na próxima iteração do event loop, depois de
-                # entry.options ser actualizado pelo flow manager.
                 self.hass.async_create_task(
                     self.hass.config_entries.async_reload(self._entry.entry_id)
                 )

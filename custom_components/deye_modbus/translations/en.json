@@ -3,8 +3,9 @@
     "step": {
       "user": {
         "title": "Deye Modbus — Inverter Connection",
-        "description": "Configure the connection to your Deye inverter via Waveshare RS485-to-WiFi adapter.",
+        "description": "Configure the connection to your inverter via Waveshare RS485-to-WiFi adapter.",
         "data": {
+          "inverter": "Inverter model",
           "host": "Host (IP address)",
           "port": "TCP Port",
           "slave": "Modbus Slave ID",
@@ -23,8 +24,9 @@
     "step": {
       "init": {
         "title": "Update Configuration — Deye Modbus",
-        "description": "Change the inverter connection settings. Existing entities are preserved.",
+        "description": "Change connection settings. Existing entities are preserved.",
         "data": {
+          "inverter": "Inverter model",
           "host": "Host (IP address)",
           "port": "TCP Port",
           "slave": "Modbus Slave ID",
