@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Deye Modbus — Ligação ao inversor",
+        "description": "Configura a ligação ao inversor Deye via conversor Waveshare RS485-to-WiFi.",
+        "data": {
+          "host": "Host (endereço IP)",
+          "port": "Porta TCP",
+          "slave": "Modbus Slave ID",
+          "scan_interval": "Intervalo de polling (segundos)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Não foi possível ligar ao dispositivo. Verifica o IP e a porta.",
+      "modbus_error": "Ligação estabelecida mas falha na leitura dos registos. Verifica o Slave ID e a fiação."
+    },
+    "abort": {
+      "already_configured": "Este inversor já está configurado."
+    }
+  }
+}

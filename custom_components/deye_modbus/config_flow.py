@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import voluptuous as vol
-from pymodbus.client import AsyncModbusTcpClient
-from pymodbus.exceptions import ModbusException
 
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
 
 from .const import (
     CONF_HOST,
@@ -33,6 +30,9 @@ STEP_SCHEMA = vol.Schema(
 
 async def _test_connection(host: str, port: int, slave: int) -> str | None:
     """Tenta ligar e ler o registo 500 (Run State). Devolve mensagem de erro ou None."""
+    from pymodbus.client import AsyncModbusTcpClient
+    from pymodbus.exceptions import ModbusException
+
     client = AsyncModbusTcpClient(host, port=port)
     try:
         connected = await client.connect()
