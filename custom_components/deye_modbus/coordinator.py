@@ -25,11 +25,14 @@ from .inverters import INVERTERS
 
 _LOGGER = logging.getLogger(__name__)
 
+# Delay between consecutive block reads — gives the Waveshare bridge time to
+# forward the RTU response before the next TCP request arrives.
 _BLOCK_DELAY = 0.3
 
 
 class DeyeModbusCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        # options override data — allows settings changes without re-creating entities
         opts = {**entry.data, **entry.options}
         self._host: str = opts[CONF_HOST]
         self._port: int = opts[CONF_PORT]
@@ -52,16 +55,18 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
         return self._host
 
     async def _async_update_data(self) -> dict:
+        # Fresh TCP connection every poll cycle — avoids accumulated state in
+        # the Waveshare bridge and transaction-ID conflicts between cycles.
         client = AsyncModbusTcpClient(self._host, port=self._port)
         try:
             connected = await client.connect()
             if not connected:
-                raise UpdateFailed("Falha ao ligar ao inversor")
+                raise UpdateFailed("Could not connect to inverter")
             return await self._read_all_blocks(client)
         except UpdateFailed:
             raise
         except Exception as err:
-            raise UpdateFailed(f"Erro inesperado: {err}") from err
+            raise UpdateFailed(f"Unexpected error: {err}") from err
         finally:
             client.close()
 
@@ -73,13 +78,13 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
             try:
                 result = await client.read_holding_registers(start, count=count)
                 if result.isError():
-                    _LOGGER.warning("Erro a ler bloco addr=%s count=%s", start, count)
+                    _LOGGER.warning("Error reading block addr=%s count=%s", start, count)
                 else:
                     block_results[idx] = result
             except ModbusException as err:
-                _LOGGER.warning("Excepção Modbus no bloco addr=%s: %s", start, err)
+                _LOGGER.warning("Modbus exception on block addr=%s: %s", start, err)
             except Exception as err:
-                _LOGGER.error("Erro inesperado no bloco addr=%s: %s", start, err)
+                _LOGGER.error("Unexpected error on block addr=%s: %s", start, err)
             await asyncio.sleep(_BLOCK_DELAY)
 
         data: dict = {}
@@ -101,7 +106,7 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
             else:
                 data[reg.name] = round(raw * reg.scale, 3)
 
-        # Sensores derivados — calculados após leitura Modbus
+        # Computed (derived) sensors — calculated after all Modbus reads
         for computed in inv.computed_registers:
             values = [
                 data[src]

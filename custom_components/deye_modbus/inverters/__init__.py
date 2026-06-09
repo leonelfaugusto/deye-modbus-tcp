@@ -1,9 +1,9 @@
-"""Registo de inversores suportados.
+"""Registry of supported inverter models.
 
-Para adicionar um novo inversor:
-1. Cria um ficheiro nesta pasta (ex: deye_sun5k_sg03lp1.py)
-2. Define um objecto INVERTER = InverterDef(...)
-3. Importa-o aqui e adiciona-o à lista _ALL
+To add a new inverter:
+1. Create a file in this folder (e.g. my_brand_model.py)
+2. Define an INVERTER = InverterDef(...) object
+3. Import it here and append it to _ALL
 """
 from __future__ import annotations
 
@@ -14,5 +14,5 @@ _ALL: list[InverterDef] = [
     _DEYE_SUN8K_SG05LP3,
 ]
 
-# Dicionário chave → definição, usado pelo config flow e coordinator
+# key → InverterDef mapping used by the config flow and coordinator
 INVERTERS: dict[str, InverterDef] = {inv.key: inv for inv in _ALL}

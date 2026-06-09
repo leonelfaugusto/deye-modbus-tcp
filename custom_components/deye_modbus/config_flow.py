@@ -26,7 +26,7 @@ from .const import (
 )
 from .inverters import INVERTERS
 
-# Schema partilhado pelo config flow e pelo options flow
+# Shared schema for the initial config flow and the options flow
 STEP_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_INVERTER, default=DEFAULT_INVERTER): SelectSelector(
@@ -46,7 +46,7 @@ STEP_SCHEMA = vol.Schema(
 
 
 async def _test_connection(host: str, port: int) -> str | None:
-    """Verifica se o TCP está acessível. Devolve chave de erro ou None."""
+    """Check TCP reachability. Returns an error key or None on success."""
     try:
         _, writer = await asyncio.wait_for(
             asyncio.open_connection(host, port), timeout=5.0
@@ -94,13 +94,14 @@ class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class DeyeModbusOptionsFlow(config_entries.OptionsFlow):
-    """Permite alterar as definições após a integração estar configurada."""
+    """Allows changing settings after the integration is already configured."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._entry = config_entry
 
     async def async_step_init(self, user_input=None):
         errors: dict[str, str] = {}
+        # current values: options override data (backwards-compatible)
         current = {**self._entry.data, **self._entry.options}
 
         if user_input is not None:
@@ -108,6 +109,8 @@ class DeyeModbusOptionsFlow(config_entries.OptionsFlow):
             if error:
                 errors["base"] = error
             else:
+                # Schedule reload so the coordinator is recreated with the new settings.
+                # Runs on the next event loop iteration, after entry.options is updated.
                 self.hass.async_create_task(
                     self.hass.config_entries.async_reload(self._entry.entry_id)
                 )

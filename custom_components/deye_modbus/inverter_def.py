@@ -1,4 +1,4 @@
-"""Tipos base para definições de inversores."""
+"""Base types for inverter definitions."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -6,24 +6,25 @@ from typing import NamedTuple
 
 
 class RegisterDef(NamedTuple):
-    """Definição de um registo Modbus."""
+    """Definition of a single Modbus holding register."""
 
     name: str
     address: int
     unit: str
     scale: float
-    dtype: str          # "uint16" ou "int16"
+    dtype: str          # "uint16" or "int16"
     device_class: str | None
     state_class: str | None
     icon: str
 
 
 class ComputedRegisterDef(NamedTuple):
-    """Sensor derivado calculado a partir de outros registos (ex: soma de PVs).
+    """A derived sensor computed from other registers (e.g. sum of PV strings).
 
-    O coordinator soma os valores de `sources` que não sejam None.
-    Partilha os mesmos campos de apresentação que RegisterDef para que
-    a mesma entidade de sensor possa ser usada para ambos os tipos.
+    The coordinator sums the values listed in `sources`, ignoring any that
+    are None (disconnected or unresponsive inputs).
+    Shares the same display fields as RegisterDef so both types can be handled
+    by the same sensor entity.
     """
 
     name: str
@@ -31,29 +32,29 @@ class ComputedRegisterDef(NamedTuple):
     device_class: str | None
     state_class: str | None
     icon: str
-    sources: list[str]  # nomes de RegisterDef a somar
+    sources: list[str]  # names of RegisterDef entries to sum
 
 
 @dataclass
 class InverterDef:
-    """Definição completa de um modelo de inversor.
+    """Complete definition of an inverter model.
 
-    Campos obrigatórios: key, name, manufacturer, model, registers, temp_registers.
-    read_blocks é opcional — se omitido é calculado automaticamente a partir
-    dos endereços dos registos (agrupa endereços com gap ≤ 5).
-    computed_registers: sensores derivados calculados após a leitura Modbus.
+    Required fields: key, name, manufacturer, model, registers, temp_registers.
+    read_blocks is optional — if omitted it is auto-computed from the register
+    addresses by grouping consecutive addresses with a gap of at most 5.
+    computed_registers: derived sensors calculated after the Modbus read.
     """
 
-    key: str                        # identificador único, ex: "deye_sun8k_sg05lp3"
-    name: str                       # nome no dropdown, ex: "Deye SUN-8K-SG05LP3-EU-SM2"
-    manufacturer: str               # ex: "Deye"
-    model: str                      # número de modelo, ex: "SUN-8K-SG05LP3-EU-SM2"
+    key: str                        # unique slug, e.g. "deye_sun8k_sg05lp3"
+    name: str                       # displayed in the config flow dropdown
+    manufacturer: str
+    model: str                      # exact model number, e.g. "SUN-8K-SG05LP3-EU-SM2"
     registers: list[RegisterDef]
-    temp_registers: set[int]        # endereços com offset de temperatura (raw - 1000) * scale
+    temp_registers: set[int]        # addresses using Deye temperature offset: (raw - 1000) * scale
     read_blocks: list[tuple[int, int]] = field(default_factory=list)
     computed_registers: list[ComputedRegisterDef] = field(default_factory=list)
 
-    # calculado em __post_init__
+    # populated by __post_init__
     addr_map: dict[int, tuple[int, int]] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -69,10 +70,10 @@ class InverterDef:
 def _auto_blocks(
     registers: list[RegisterDef], max_gap: int = 5
 ) -> list[tuple[int, int]]:
-    """Agrupa endereços consecutivos em blocos de leitura.
+    """Group register addresses into contiguous read blocks.
 
-    max_gap: gap máximo (em endereços) para incluir num mesmo bloco.
-    Endereços intermédios não usados são lidos mas ignorados.
+    Addresses within max_gap of each other are merged into a single block.
+    Intermediate unused addresses are read but their values are discarded.
     """
     addresses = sorted({r.address for r in registers})
     if not addresses:

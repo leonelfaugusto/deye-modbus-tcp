@@ -2,40 +2,40 @@
   "config": {
     "step": {
       "user": {
-        "title": "Deye Modbus — Ligação ao inversor",
-        "description": "Configura a ligação ao inversor via conversor Waveshare RS485-to-WiFi.",
+        "title": "Deye Modbus — Inverter Connection",
+        "description": "Configure the connection to your inverter via a Waveshare RS485-to-WiFi adapter.",
         "data": {
-          "inverter": "Modelo do inversor",
-          "host": "Host (endereço IP)",
-          "port": "Porta TCP",
+          "inverter": "Inverter model",
+          "host": "Host (IP address)",
+          "port": "TCP Port",
           "slave": "Modbus Slave ID",
-          "scan_interval": "Intervalo de polling (segundos)"
+          "scan_interval": "Polling interval (seconds)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Não foi possível ligar ao dispositivo. Verifica o IP e a porta."
+      "cannot_connect": "Could not connect to the device. Check the IP address and port."
     },
     "abort": {
-      "already_configured": "Este inversor já está configurado."
+      "already_configured": "This inverter is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Alterar configuração — Deye Modbus",
-        "description": "Altera as definições de ligação. As entidades existentes são mantidas.",
+        "title": "Update Configuration — Deye Modbus",
+        "description": "Change connection settings. Existing entities are preserved.",
         "data": {
-          "inverter": "Modelo do inversor",
-          "host": "Host (endereço IP)",
-          "port": "Porta TCP",
+          "inverter": "Inverter model",
+          "host": "Host (IP address)",
+          "port": "TCP Port",
           "slave": "Modbus Slave ID",
-          "scan_interval": "Intervalo de polling (segundos)"
+          "scan_interval": "Polling interval (seconds)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Não foi possível ligar ao dispositivo. Verifica o IP e a porta."
+      "cannot_connect": "Could not connect to the device. Check the IP address and port."
     }
   }
 }
