@@ -4,145 +4,145 @@
 [![GitHub release](https://img.shields.io/github/v/release/leonelfaugusto/deye-modbus-tcp)](https://github.com/leonelfaugusto/deye-modbus-tcp/releases)
 [![HA version](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue)](https://www.home-assistant.io/)
 
-Custom component para Home Assistant que lê dados de inversores solares via Modbus TCP, usando um conversor RS485-to-WiFi (Waveshare ou compatível) como bridge.
+Home Assistant custom component that reads data from solar inverters via Modbus TCP, using a Waveshare RS485-to-WiFi adapter (or compatible) as a bridge.
 
 ---
 
-## Inversores suportados
+## Supported inverters
 
-| Modelo | Ficheiro | Fases | Strings PV |
+| Model | File key | Phases | PV strings |
 |---|---|---|---|
 | Deye SUN-xK-SG05LP3-EU-SM2 | `deye_sun8k_sg05lp3` | 3 | 4 |
 
-> Compatível com as variantes SUN-5K, SUN-6K, SUN-8K, SUN-10K da série SG05LP3 que partilham o mesmo mapa de registos Modbus RTU V105.4.
+> Compatible with the SUN-5K, SUN-6K, SUN-8K and SUN-10K variants of the SG05LP3-EU-SM2 series, which share the same Modbus register map (RTU V105.4).
 
-Queres adicionar o teu inversor? Ver a secção **[Contribuir — Adicionar um novo inversor](#contribuir--adicionar-um-novo-inversor)**.
+Want to add your inverter? See **[Contributing — Adding a new inverter](#contributing--adding-a-new-inverter)**.
 
 ---
 
-## Hardware testado
+## Tested hardware
 
-| Componente | Modelo |
+| Component | Model |
 |---|---|
-| Inversor | Deye SUN-8K-SG05LP3-EU-SM2 |
-| Conversor RS485 | Waveshare RS485 to WiFi/ETH |
+| Inverter | Deye SUN-8K-SG05LP3-EU-SM2 |
+| RS485 adapter | Waveshare RS485 to WiFi/ETH |
 
-### Requisitos de hardware
+### Hardware requirements
 
-- Waveshare configurado em modo **Modbus TCP ⟺ Modbus RTU** (não Transparent)
-- Inversor com **Modbus SN = 01** (em Advanced Function no display)
-- Baud rate: **9600 bps, 8N1** — igual no Waveshare e no inversor
-- Não usar o modo Transparent do Waveshare — o framing TCP/RTU é diferente
-
----
-
-## Instalação via HACS
-
-1. Em HACS → Integrations → ⋮ → **Custom repositories**
-2. Adicionar `https://github.com/leonelfaugusto/deye-modbus-tcp`, categoria: **Integration**
-3. Instalar **Deye Modbus**
-4. Reiniciar o Home Assistant
-5. Ir a **Definições → Integrações → Adicionar integração → Deye Modbus**
-
-## Instalação manual
-
-Copiar a pasta `custom_components/deye_modbus/` para `<config>/custom_components/` e reiniciar o HA.
+- Waveshare configured in **Modbus TCP ⟺ Modbus RTU** mode (not Transparent)
+- Inverter with **Modbus SN = 01** (set under Advanced Function on the inverter display)
+- Baud rate: **9600 bps, 8N1** — must match on both the Waveshare and the inverter
+- Do not use Transparent mode on the Waveshare — the TCP/RTU framing is different
 
 ---
 
-## Configuração
+## Installation via HACS
 
-| Campo | Padrão | Descrição |
+1. In HACS → Integrations → ⋮ → **Custom repositories**
+2. Add `https://github.com/leonelfaugusto/deye-modbus-tcp`, category: **Integration**
+3. Install **Deye Modbus**
+4. Restart Home Assistant
+5. Go to **Settings → Integrations → Add integration → Deye Modbus**
+
+## Manual installation
+
+Copy the `custom_components/deye_modbus/` folder to `<config>/custom_components/` and restart HA.
+
+---
+
+## Configuration
+
+| Field | Default | Description |
 |---|---|---|
-| Modelo do inversor | — | Seleccionar da lista de modelos suportados |
-| Host (IP) | `10.10.20.102` | IP do conversor Waveshare |
-| Porta TCP | `8899` | Porta TCP do Waveshare |
-| Modbus Slave ID | `1` | Slave ID configurado no inversor |
-| Intervalo de polling | `10` | Segundos entre leituras (mín. 5s) |
+| Inverter model | — | Select from the list of supported models |
+| Host (IP) | `10.10.20.102` | IP address of the Waveshare adapter |
+| TCP Port | `8899` | TCP port of the Waveshare adapter |
+| Modbus Slave ID | `1` | Slave ID configured on the inverter |
+| Polling interval | `10` | Seconds between reads (min. 5 s) |
 
-### Alterar definições após configuração
+### Changing settings after setup
 
-Vai a **Definições → Integrações → Deye Modbus → Configurar**. Todas as definições podem ser alteradas sem perder o histórico dos sensores.
+Go to **Settings → Integrations → Deye Modbus → Configure**. All settings can be changed without losing sensor history.
 
 ---
 
-## Sensores criados
+## Sensors
 
-O componente cria um único dispositivo com todos os sensores agrupados.
+The integration creates a single device with all sensors grouped under it.
 
-### Deye SUN-xK-SG05LP3-EU-SM2 (48 sensores)
+### Deye SUN-xK-SG05LP3-EU-SM2 (48 sensors)
 
-| Grupo | Sensores |
+| Group | Sensors |
 |---|---|
-| Estado | Run State |
+| General | Run State |
 | Grid | L1/L2/L3 Voltage · L1/L2/L3 Power · Total Power · Frequency |
 | PV | PV1–PV4 Power · PV1/PV2 Voltage · PV1/PV2 Current · **PV Total Power** ¹ |
-| Inversor | L1/L2/L3 Power · Total Power · L1/L2/L3 Voltage |
+| Inverter | L1/L2/L3 Power · Total Power · L1/L2/L3 Voltage |
 | Load | L1/L2/L3 Power · Total Power |
-| Bateria | SOC · Voltage · Current · Power · Temperature |
-| Temperatura | DC Transformer Temp · Heat Sink Temp |
-| Energia diária | Generation · Grid Buy · Grid Sell · Load · Battery Charge · Battery Discharge |
-| CT externo | CT1/CT2/CT3 Current · CT1/CT2/CT3 Power · Total Power |
+| Battery | SOC · Voltage · Current · Power · Temperature |
+| Temperature | DC Transformer Temp · Heat Sink Temp |
+| Daily energy | Generation · Grid Buy · Grid Sell · Load · Battery Charge · Battery Discharge |
+| External CT | CT1/CT2/CT3 Current · CT1/CT2/CT3 Power · Total Power |
 
-¹ **PV Total Power** é calculado automaticamente como a soma dos strings PV activos (ignora strings não ligados).
+¹ **PV Total Power** is automatically computed as the sum of all active PV strings (disconnected or unresponsive strings are ignored).
 
-### Convenções de sinal
+### Sign conventions
 
-| Sensor | Valor positivo | Valor negativo |
+| Sensor | Positive value | Negative value |
 |---|---|---|
-| Grid Power | Importação da rede | Exportação para a rede |
-| Battery Power | Descarga da bateria | Carga da bateria |
-| Battery Current | Descarga | Carga |
+| Grid Power | Importing from grid | Exporting to grid |
+| Battery Power | Discharging | Charging |
+| Battery Current | Discharging | Charging |
 
 ---
 
 ## Energy Dashboard
 
-Os seguintes sensores são compatíveis com o Energy Dashboard do Home Assistant (`state_class: total_increasing`):
+The following sensors are compatible with the Home Assistant Energy Dashboard (`state_class: total_increasing`):
 
-- `Today Generation` → Produção solar
-- `Today Grid Buy` → Consumo da rede
-- `Today Grid Sell` → Exportação para a rede
-- `Today Load` → Consumo total da casa
-- `Today Battery Charge` → Energia de carga da bateria
-- `Today Battery Discharge` → Energia de descarga da bateria
+- `Today Generation` → Solar production
+- `Today Grid Buy` → Grid consumption
+- `Today Grid Sell` → Grid export
+- `Today Load` → Total house consumption
+- `Today Battery Charge` → Battery charge energy
+- `Today Battery Discharge` → Battery discharge energy
 
 ---
 
-## Contribuir — Adicionar um novo inversor
+## Contributing — Adding a new inverter
 
-A integração foi desenhada para ser facilmente extensível. Cada modelo de inversor é definido num ficheiro Python independente em `custom_components/deye_modbus/inverters/`.
+The integration is designed to be easily extensible. Each inverter model is defined in a standalone Python file inside `custom_components/deye_modbus/inverters/`.
 
-### Passo 1 — Criar o ficheiro de definição
+### Step 1 — Create the definition file
 
-Cria `custom_components/deye_modbus/inverters/<chave_do_modelo>.py`:
+Create `custom_components/deye_modbus/inverters/<model_key>.py`:
 
 ```python
-"""Descrição do inversor e referências ao manual Modbus."""
+"""Brief description of the inverter and reference to the Modbus manual."""
 from __future__ import annotations
 
 from ..inverter_def import ComputedRegisterDef, InverterDef, RegisterDef
 
 INVERTER = InverterDef(
-    key="fabricante_modelo",           # identificador único, sem espaços
-    name="Fabricante Modelo-XYZ",      # nome no dropdown de configuração
-    manufacturer="Fabricante",
-    model="Modelo-XYZ",
+    key="brand_model",              # unique slug, no spaces
+    name="Brand Model-XYZ",        # shown in the config flow dropdown
+    manufacturer="Brand",
+    model="Model-XYZ",
 
-    # Registos com offset de temperatura: valor_real = (raw - 1000) × scale
+    # Addresses that use Deye temperature offset: real_value = (raw - 1000) × scale
     temp_registers={100, 101},
 
     registers=[
-        # RegisterDef(nome, endereço, unidade, scale, dtype, device_class, state_class, icon)
+        # RegisterDef(name, address, unit, scale, dtype, device_class, state_class, icon)
         RegisterDef("Battery SOC",   100, "%",  1,    "uint16", "battery",     "measurement",      "mdi:battery"),
         RegisterDef("Grid Power",    200, "W",  1,    "int16",  "power",       "measurement",      "mdi:transmission-tower"),
         RegisterDef("PV1 Power",     300, "W",  1,    "uint16", "power",       "measurement",      "mdi:solar-power"),
         RegisterDef("PV2 Power",     301, "W",  1,    "uint16", "power",       "measurement",      "mdi:solar-power"),
         RegisterDef("Today Import",  400, "kWh",0.1,  "uint16", "energy",      "total_increasing", "mdi:transmission-tower-import"),
-        # ... restantes registos
+        # ... remaining registers
     ],
 
-    # Sensores calculados a partir de outros registos (sem endereço Modbus)
+    # Derived sensors computed from other registers (no Modbus address of their own)
     computed_registers=[
         ComputedRegisterDef(
             name="PV Total Power",
@@ -150,16 +150,16 @@ INVERTER = InverterDef(
             device_class="power",
             state_class="measurement",
             icon="mdi:solar-power",
-            sources=["PV1 Power", "PV2 Power"],  # nomes de RegisterDef a somar
+            sources=["PV1 Power", "PV2 Power"],  # RegisterDef names to sum
         ),
     ],
 
-    # read_blocks é OPCIONAL.
-    # Se omitido, é calculado automaticamente agrupando endereços com gap ≤ 5.
-    # Define-o explicitamente para controlo fino sobre as leituras Modbus
-    # (útil quando há gaps grandes entre grupos de registos).
+    # read_blocks is OPTIONAL.
+    # If omitted, blocks are auto-computed by grouping addresses with a gap <= 5.
+    # Define explicitly for fine-grained control over Modbus reads
+    # (useful when there are large address gaps between register groups).
     read_blocks=[
-        (100, 2),   # Battery SOC + outro
+        (100, 2),   # Battery SOC + next
         (200, 1),   # Grid Power
         (300, 2),   # PV1 + PV2 Power
         (400, 1),   # Today Import
@@ -167,103 +167,103 @@ INVERTER = InverterDef(
 )
 ```
 
-### Passo 2 — Registar em `inverters/__init__.py`
+### Step 2 — Register in `inverters/__init__.py`
 
 ```python
-from .fabricante_modelo import INVERTER as _FABRICANTE_MODELO
+from .brand_model import INVERTER as _BRAND_MODEL
 
 _ALL: list[InverterDef] = [
     _DEYE_SUN8K_SG05LP3,
-    _FABRICANTE_MODELO,   # ← adicionar aqui
+    _BRAND_MODEL,   # ← add here
 ]
 ```
 
-O novo modelo aparece automaticamente no dropdown de configuração do HA.
+The new model will appear automatically in the HA configuration dropdown.
 
-### Referência de tipos
+### Type reference
 
-#### `RegisterDef` — registo Modbus
+#### `RegisterDef` — Modbus holding register
 
-| Campo | Tipo | Descrição |
+| Field | Type | Description |
 |---|---|---|
-| `name` | `str` | Nome do sensor (ex: `"Battery SOC"`) |
-| `address` | `int` | Endereço do holding register |
-| `unit` | `str` | Unidade (`"W"`, `"V"`, `"A"`, `"%"`, `"°C"`, `"kWh"`, `"Hz"`, `""`) |
-| `scale` | `float` | Multiplicador aplicado ao valor raw (ex: `0.1` para divisão por 10) |
-| `dtype` | `str` | `"uint16"` (sem sinal) ou `"int16"` (com sinal, para potências e correntes que podem ser negativas) |
-| `device_class` | `str\|None` | Classe HA: `"voltage"`, `"current"`, `"power"`, `"energy"`, `"battery"`, `"temperature"`, `"frequency"`, ou `None` |
-| `state_class` | `str\|None` | `"measurement"` para valores instantâneos, `"total_increasing"` para contadores de energia, ou `None` |
-| `icon` | `str` | Ícone MDI (ex: `"mdi:solar-power"`) |
+| `name` | `str` | Sensor name (e.g. `"Battery SOC"`) |
+| `address` | `int` | Holding register address |
+| `unit` | `str` | Unit of measurement (`"W"`, `"V"`, `"A"`, `"%"`, `"°C"`, `"kWh"`, `"Hz"`, `""`) |
+| `scale` | `float` | Multiplier applied to the raw value (e.g. `0.1` divides by 10) |
+| `dtype` | `str` | `"uint16"` (unsigned) or `"int16"` (signed — for power and current values that can be negative) |
+| `device_class` | `str\|None` | HA device class: `"voltage"`, `"current"`, `"power"`, `"energy"`, `"battery"`, `"temperature"`, `"frequency"`, or `None` |
+| `state_class` | `str\|None` | `"measurement"` for instantaneous values, `"total_increasing"` for energy counters, or `None` |
+| `icon` | `str` | MDI icon (e.g. `"mdi:solar-power"`) |
 
-#### `ComputedRegisterDef` — sensor derivado
+#### `ComputedRegisterDef` — derived sensor
 
-| Campo | Tipo | Descrição |
+| Field | Type | Description |
 |---|---|---|
-| `name` | `str` | Nome do sensor |
-| `unit` | `str` | Unidade |
-| `device_class` | `str\|None` | Classe HA |
-| `state_class` | `str\|None` | Classe de estado |
-| `icon` | `str` | Ícone MDI |
-| `sources` | `list[str]` | Nomes de `RegisterDef` a somar (valores `None` são ignorados) |
+| `name` | `str` | Sensor name |
+| `unit` | `str` | Unit of measurement |
+| `device_class` | `str\|None` | HA device class |
+| `state_class` | `str\|None` | HA state class |
+| `icon` | `str` | MDI icon |
+| `sources` | `list[str]` | Names of `RegisterDef` entries to sum (`None` values are ignored) |
 
-#### Temperatura com offset Deye
+#### Deye temperature offset
 
-Alguns inversores Deye codificam a temperatura com offset de 1000:
+Some Deye inverter registers encode temperature with an offset of 1000:
 
 ```
-valor_real = (raw - 1000) × scale
+real_value = (raw - 1000) × scale
 ```
 
-Exemplo: raw `1250` com scale `0.1` → `(1250 - 1000) × 0.1 = 25.0 °C`
+Example: raw `1250` with scale `0.1` → `(1250 - 1000) × 0.1 = 25.0 °C`
 
-Adiciona os endereços afectados ao campo `temp_registers={...}` do `InverterDef`.
+Add the affected addresses to the `temp_registers={...}` field of `InverterDef`.
 
-### Dicas para mapear registos
+### Tips for mapping registers
 
-1. Obtém o manual Modbus do teu inversor (geralmente disponível no site do fabricante ou em grupos de utilizadores)
-2. Procura a tabela de "Holding Registers" (function code 0x03)
-3. Verifica se os valores signed/unsigned correspondem ao que lês — potências e correntes que podem ser negativas são geralmente `int16`
-4. Usa um cliente Modbus (ex: [ModbusPoll](https://www.modbustools.com/modbus_poll.html) ou [QModMaster](https://sourceforge.net/projects/qmodmaster/)) para validar os valores antes de criar a definição
+1. Get the Modbus manual for your inverter (usually available on the manufacturer's website or community forums)
+2. Look for the "Holding Registers" table (function code 0x03)
+3. Check whether values are signed or unsigned — power and current values that can be negative are typically `int16`
+4. Use a Modbus client (e.g. [ModbusPoll](https://www.modbustools.com/modbus_poll.html) or [QModMaster](https://sourceforge.net/projects/qmodmaster/)) to verify values against the live inverter before writing the definition
 
-### Submeter um PR
+### Submitting a PR
 
-1. Fork do repositório
-2. Cria um branch: `git checkout -b inverter/fabricante-modelo`
-3. Adiciona o ficheiro em `inverters/` e regista em `inverters/__init__.py`
-4. Testa com o teu hardware e confirma que os valores fazem sentido
-5. Abre um Pull Request com:
-   - Modelo exacto do inversor (incluindo variantes compatíveis)
-   - Referência ao manual Modbus utilizado
-   - Printscreen ou log de valores lidos para validação
+1. Fork the repository
+2. Create a branch: `git checkout -b inverter/brand-model`
+3. Add the file in `inverters/` and register it in `inverters/__init__.py`
+4. Test with your hardware and confirm the values make sense
+5. Open a Pull Request including:
+   - Exact inverter model (and any compatible variants)
+   - Reference to the Modbus manual used
+   - Screenshot or log of live readings for validation
 
 ---
 
-## Arquitectura
+## Architecture
 
 ```
 custom_components/deye_modbus/
-├── inverter_def.py          # tipos base: RegisterDef, ComputedRegisterDef, InverterDef
+├── inverter_def.py          # base types: RegisterDef, ComputedRegisterDef, InverterDef
 ├── inverters/
-│   ├── __init__.py          # registo de todos os modelos suportados
-│   └── deye_sun8k_sg05lp3.py  # definição do Deye SUN-xK-SG05LP3-EU-SM2
-├── coordinator.py           # DataUpdateCoordinator — leitura Modbus TCP
-├── config_flow.py           # config flow + options flow (UI de configuração)
-├── sensor.py                # entidades SensorEntity
-├── const.py                 # constantes
-└── __init__.py              # setup/unload da config entry
+│   ├── __init__.py          # registry of all supported models
+│   └── deye_sun8k_sg05lp3.py  # Deye SUN-xK-SG05LP3-EU-SM2 definition
+├── coordinator.py           # DataUpdateCoordinator — Modbus TCP polling
+├── config_flow.py           # config flow + options flow (HA configuration UI)
+├── sensor.py                # SensorEntity implementations
+├── const.py                 # constants
+└── __init__.py              # config entry setup / unload
 ```
 
-### Fluxo de leitura
+### Read cycle
 
-1. O coordinator abre uma ligação TCP nova em cada ciclo de polling
-2. Lê os registos em **blocos consecutivos** (menos transações Modbus TCP = menos pressão sobre o bridge RS485)
-3. Aguarda 300ms entre blocos para não saturar o Waveshare
-4. Calcula os sensores derivados (`ComputedRegisterDef`) após a leitura
-5. Fecha a ligação TCP
-6. O HA actualiza os estados dos sensores com os novos valores
+1. The coordinator opens a fresh TCP connection each polling cycle
+2. Reads registers in **contiguous blocks** (fewer Modbus TCP transactions = less load on the RS485 bridge)
+3. Waits 300 ms between blocks to avoid saturating the Waveshare adapter
+4. Computes derived sensors (`ComputedRegisterDef`) after all reads are complete
+5. Closes the TCP connection
+6. HA updates all sensor states with the new values
 
 ---
 
-## Licença
+## License
 
 MIT
