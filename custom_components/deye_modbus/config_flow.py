@@ -1,0 +1,81 @@
+from __future__ import annotations
+
+import voluptuous as vol
+from pymodbus.client import AsyncModbusTcpClient
+from pymodbus.exceptions import ModbusException
+
+from homeassistant import config_entries
+from homeassistant.core import HomeAssistant
+
+from .const import (
+    CONF_HOST,
+    CONF_PORT,
+    CONF_SCAN_INTERVAL,
+    CONF_SLAVE,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SLAVE,
+    DOMAIN,
+)
+
+STEP_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
+        vol.Required(CONF_PORT, default=DEFAULT_PORT): vol.All(int, vol.Range(min=1, max=65535)),
+        vol.Required(CONF_SLAVE, default=DEFAULT_SLAVE): vol.All(int, vol.Range(min=1, max=247)),
+        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
+            int, vol.Range(min=5, max=300)
+        ),
+    }
+)
+
+
+async def _test_connection(host: str, port: int, slave: int) -> str | None:
+    """Tenta ligar e ler o registo 500 (Run State). Devolve mensagem de erro ou None."""
+    client = AsyncModbusTcpClient(host, port=port)
+    try:
+        connected = await client.connect()
+        if not connected:
+            return "cannot_connect"
+        result = await client.read_holding_registers(address=500, count=1, slave=slave)
+        if result.isError():
+            return "modbus_error"
+    except ModbusException:
+        return "modbus_error"
+    except Exception:
+        return "cannot_connect"
+    finally:
+        client.close()
+    return None
+
+
+class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    VERSION = 1
+
+    async def async_step_user(self, user_input=None):
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            error = await _test_connection(
+                user_input[CONF_HOST],
+                user_input[CONF_PORT],
+                user_input[CONF_SLAVE],
+            )
+            if error:
+                errors["base"] = error
+            else:
+                await self.async_set_unique_id(
+                    f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}"
+                )
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(
+                    title=f"Deye @ {user_input[CONF_HOST]}",
+                    data=user_input,
+                )
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=STEP_SCHEMA,
+            errors=errors,
+        )
