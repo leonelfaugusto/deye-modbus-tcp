@@ -76,6 +76,8 @@ class DeyeModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=STEP_SCHEMA,
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_SCHEMA, user_input or {}
+            ),
             errors=errors,
         )
