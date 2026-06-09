@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import DeyeModbusCoordinator
-from .inverter_def import RegisterDef
+from .inverter_def import ComputedRegisterDef, RegisterDef
 
 _DEVICE_CLASS_MAP = {
     "voltage": SensorDeviceClass.VOLTAGE,
@@ -38,9 +38,10 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: DeyeModbusCoordinator = hass.data[DOMAIN][entry.entry_id]
+    inv = coordinator.inverter
     async_add_entities(
         DeyeModbusSensor(coordinator, entry, reg)
-        for reg in coordinator.inverter.registers
+        for reg in [*inv.registers, *inv.computed_registers]
     )
 
 
@@ -49,7 +50,7 @@ class DeyeModbusSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: DeyeModbusCoordinator,
         entry: ConfigEntry,
-        reg: RegisterDef,
+        reg: RegisterDef | ComputedRegisterDef,
     ) -> None:
         super().__init__(coordinator)
         inv = coordinator.inverter

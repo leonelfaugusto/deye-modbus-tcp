@@ -9,7 +9,7 @@ Bridge recomendada: Waveshare RS485 to WiFi/ETH, modo Modbus TCP⟺RTU
 """
 from __future__ import annotations
 
-from ..inverter_def import InverterDef, RegisterDef
+from ..inverter_def import ComputedRegisterDef, InverterDef, RegisterDef
 
 INVERTER = InverterDef(
     key="deye_sun8k_sg05lp3",
@@ -83,6 +83,17 @@ INVERTER = InverterDef(
         RegisterDef("External CT2 Power",     617, "W",   1,     "int16",  "power",       "measurement",      "mdi:transmission-tower"),
         RegisterDef("External CT3 Power",     618, "W",   1,     "int16",  "power",       "measurement",      "mdi:transmission-tower"),
         RegisterDef("External Total Power",   619, "W",   1,     "int16",  "power",       "measurement",      "mdi:transmission-tower"),
+    ],
+    computed_registers=[
+        # Soma de todos os strings PV activos (ignora os que retornam None)
+        ComputedRegisterDef(
+            name="PV Total Power",
+            unit="W",
+            device_class="power",
+            state_class="measurement",
+            icon="mdi:solar-power",
+            sources=["PV1 Power", "PV2 Power", "PV3 Power", "PV4 Power"],
+        ),
     ],
     # Blocos de leitura optimizados para o Waveshare RS485-to-WiFi.
     # Definidos explicitamente para evitar leituras desnecessárias

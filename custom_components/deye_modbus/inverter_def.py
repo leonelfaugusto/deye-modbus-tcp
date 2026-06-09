@@ -18,6 +18,22 @@ class RegisterDef(NamedTuple):
     icon: str
 
 
+class ComputedRegisterDef(NamedTuple):
+    """Sensor derivado calculado a partir de outros registos (ex: soma de PVs).
+
+    O coordinator soma os valores de `sources` que não sejam None.
+    Partilha os mesmos campos de apresentação que RegisterDef para que
+    a mesma entidade de sensor possa ser usada para ambos os tipos.
+    """
+
+    name: str
+    unit: str
+    device_class: str | None
+    state_class: str | None
+    icon: str
+    sources: list[str]  # nomes de RegisterDef a somar
+
+
 @dataclass
 class InverterDef:
     """Definição completa de um modelo de inversor.
@@ -25,6 +41,7 @@ class InverterDef:
     Campos obrigatórios: key, name, manufacturer, model, registers, temp_registers.
     read_blocks é opcional — se omitido é calculado automaticamente a partir
     dos endereços dos registos (agrupa endereços com gap ≤ 5).
+    computed_registers: sensores derivados calculados após a leitura Modbus.
     """
 
     key: str                        # identificador único, ex: "deye_sun8k_sg05lp3"
@@ -34,6 +51,7 @@ class InverterDef:
     registers: list[RegisterDef]
     temp_registers: set[int]        # endereços com offset de temperatura (raw - 1000) * scale
     read_blocks: list[tuple[int, int]] = field(default_factory=list)
+    computed_registers: list[ComputedRegisterDef] = field(default_factory=list)
 
     # calculado em __post_init__
     addr_map: dict[int, tuple[int, int]] = field(init=False, default_factory=dict)

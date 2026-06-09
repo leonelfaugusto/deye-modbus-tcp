@@ -101,4 +101,13 @@ class DeyeModbusCoordinator(DataUpdateCoordinator):
             else:
                 data[reg.name] = round(raw * reg.scale, 3)
 
+        # Sensores derivados — calculados após leitura Modbus
+        for computed in inv.computed_registers:
+            values = [
+                data[src]
+                for src in computed.sources
+                if data.get(src) is not None
+            ]
+            data[computed.name] = round(sum(values), 3) if values else None
+
         return data
