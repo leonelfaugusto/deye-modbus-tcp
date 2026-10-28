@@ -13,8 +13,11 @@ Home Assistant custom component that reads data from solar inverters via Modbus 
 | Model | File key | Phases | PV strings |
 |---|---|---|---|
 | Deye SUN-xK-SG05LP3-EU-SM2 | `deye_sun8k_sg05lp3` | 3 | 4 |
+| Deye SUN-6K-SG05LP1 | `deye_sun6k_sg05lp1` | 1 | 2 |
 
-> Compatible with the SUN-5K, SUN-6K, SUN-8K and SUN-10K variants of the SG05LP3-EU-SM2 series, which share the same Modbus register map (RTU V105.4).
+> **SG05LP3:** compatible with the SUN-5K, SUN-6K, SUN-8K and SUN-10K variants of the SG05LP3-EU-SM2 series, which share the same Modbus register map (RTU V105.4).
+>
+> **SG05LP1:** single-phase model, contributed by [@chshkhr](https://github.com/chshkhr) ([#1](https://github.com/leonelfaugusto/deye-modbus-tcp/pull/1)).
 
 Want to add your inverter? See **[Contributing — Adding a new inverter](#contributing--adding-a-new-inverter)**.
 
@@ -24,7 +27,7 @@ Want to add your inverter? See **[Contributing — Adding a new inverter](#contr
 
 | Component | Model |
 |---|---|
-| Inverter | Deye SUN-8K-SG05LP3-EU-SM2 |
+| Inverter | Deye SUN-8K-SG05LP3-EU-SM2 · Deye SUN-6K-SG05LP1 (community) |
 | RS485 adapter | Waveshare RS485 to WiFi/ETH |
 
 ### Hardware requirements
@@ -84,6 +87,17 @@ The integration creates a single device with all sensors grouped under it.
 | Daily energy | Generation · Grid Buy · Grid Sell · Load · Battery Charge · Battery Discharge |
 | External CT | CT1/CT2/CT3 Current · CT1/CT2/CT3 Power · Total Power |
 
+### Deye SUN-6K-SG05LP1 (21 sensors)
+
+| Group | Sensors |
+|---|---|
+| Grid | L1 Voltage · Frequency · Grid Power · Grid CT Power |
+| PV | PV1/PV2 Power · PV1/PV2 Voltage · **PV Total Power** ¹ |
+| Load | Load Power |
+| Battery | SOC · Voltage · Current · Power |
+| Temperature | Inverter Temperature |
+| Daily energy | PV Energy · Grid Import · Grid Export · Load Energy · Battery Charge · Battery Discharge |
+
 ¹ **PV Total Power** is automatically computed as the sum of all active PV strings (disconnected or unresponsive strings are ignored).
 
 ### Sign conventions
@@ -100,12 +114,14 @@ The integration creates a single device with all sensors grouped under it.
 
 The following sensors are compatible with the Home Assistant Energy Dashboard (`state_class: total_increasing`):
 
-- `Today Generation` → Solar production
-- `Today Grid Buy` → Grid consumption
-- `Today Grid Sell` → Grid export
-- `Today Load` → Total house consumption
-- `Today Battery Charge` → Battery charge energy
-- `Today Battery Discharge` → Battery discharge energy
+| Energy Dashboard | SG05LP3 | SG05LP1 |
+|---|---|---|
+| Solar production | `Today Generation` | `Daily PV Energy` |
+| Grid consumption | `Today Grid Buy` | `Daily Grid Import` |
+| Grid export | `Today Grid Sell` | `Daily Grid Export` |
+| Total house consumption | `Today Load` | `Daily Load Energy` |
+| Battery charge energy | `Today Battery Charge` | `Daily Battery Charge` |
+| Battery discharge energy | `Today Battery Discharge` | `Daily Battery Discharge` |
 
 ---
 
@@ -179,6 +195,7 @@ INVERTER = InverterDef(
 from .brand_model import INVERTER as _BRAND_MODEL
 
 _ALL: list[InverterDef] = [
+    _DEYE_SUN6K_SG05LP1,
     _DEYE_SUN8K_SG05LP3,
     _BRAND_MODEL,  # ← add here
 ]
@@ -251,6 +268,7 @@ custom_components/deye_modbus/
 ├── inverter_def.py          # base types: RegisterDef, ComputedRegisterDef, InverterDef
 ├── inverters/
 │   ├── __init__.py          # registry of all supported models
+│   ├── deye_sun6k_sg05lp1.py  # Deye SUN-6K-SG05LP1 (single-phase) definition
 │   └── deye_sun8k_sg05lp3.py  # Deye SUN-xK-SG05LP3-EU-SM2 definition
 ├── coordinator.py           # DataUpdateCoordinator — Modbus TCP polling
 ├── config_flow.py           # config flow + options flow (HA configuration UI)
@@ -267,6 +285,17 @@ custom_components/deye_modbus/
 4. Computes derived sensors (`ComputedRegisterDef`) after all reads are complete
 5. Closes the TCP connection
 6. HA updates all sensor states with the new values
+
+---
+
+## Contributors
+
+| Contributor | Contribution |
+|---|---|
+| [@leonelfaugusto](https://github.com/leonelfaugusto) | Author and maintainer · Deye SUN-xK-SG05LP3-EU-SM2 support |
+| [@chshkhr](https://github.com/chshkhr) | Deye SUN-6K-SG05LP1 support ([#1](https://github.com/leonelfaugusto/deye-modbus-tcp/pull/1)) |
+
+Contributions are welcome — see [Contributing — Adding a new inverter](#contributing--adding-a-new-inverter).
 
 ---
 
