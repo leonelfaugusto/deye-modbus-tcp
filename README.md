@@ -288,6 +288,17 @@ custom_components/deye_modbus/
 
 ---
 
+## Contributors
+
+| Contributor | Contribution |
+|---|---|
+| [@leonelfaugusto](https://github.com/leonelfaugusto) | Author and maintainer · Deye SUN-xK-SG05LP3-EU-SM2 support |
+| [@chshkhr](https://github.com/chshkhr) | Deye SUN-6K-SG05LP1 support ([#1](https://github.com/leonelfaugusto/deye-modbus-tcp/pull/1)) |
+
+Contributions are welcome — see [Contributing — Adding a new inverter](#contributing--adding-a-new-inverter).
+
+---
+
 ## License
 
 MIT
