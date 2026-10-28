@@ -9,9 +9,11 @@ To add a new inverter:
 from __future__ import annotations
 
 from ..inverter_def import InverterDef
+from .deye_sun6k_sg05lp1 import INVERTER as _DEYE_SUN6K_SG05LP1
 from .deye_sun8k_sg05lp3 import INVERTER as _DEYE_SUN8K_SG05LP3
 
 _ALL: list[InverterDef] = [
+    _DEYE_SUN6K_SG05LP1,
     _DEYE_SUN8K_SG05LP3,
 ]
 

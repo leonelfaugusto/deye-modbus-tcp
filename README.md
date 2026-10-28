@@ -119,29 +119,36 @@ Create `custom_components/deye_modbus/inverters/<model_key>.py`:
 
 ```python
 """Brief description of the inverter and reference to the Modbus manual."""
+
 from __future__ import annotations
 
 from ..inverter_def import ComputedRegisterDef, InverterDef, RegisterDef
 
 INVERTER = InverterDef(
-    key="brand_model",              # unique slug, no spaces
-    name="Brand Model-XYZ",        # shown in the config flow dropdown
+    key="brand_model",  # unique slug, no spaces
+    name="Brand Model-XYZ",  # shown in the config flow dropdown
     manufacturer="Brand",
     model="Model-XYZ",
-
     # Addresses that use Deye temperature offset: real_value = (raw - 1000) × scale
     temp_registers={100, 101},
-
     registers=[
         # RegisterDef(name, address, unit, scale, dtype, device_class, state_class, icon)
-        RegisterDef("Battery SOC",   100, "%",  1,    "uint16", "battery",     "measurement",      "mdi:battery"),
-        RegisterDef("Grid Power",    200, "W",  1,    "int16",  "power",       "measurement",      "mdi:transmission-tower"),
-        RegisterDef("PV1 Power",     300, "W",  1,    "uint16", "power",       "measurement",      "mdi:solar-power"),
-        RegisterDef("PV2 Power",     301, "W",  1,    "uint16", "power",       "measurement",      "mdi:solar-power"),
-        RegisterDef("Today Import",  400, "kWh",0.1,  "uint16", "energy",      "total_increasing", "mdi:transmission-tower-import"),
+        RegisterDef("Battery SOC", 100, "%", 1, "uint16", "battery", "measurement", "mdi:battery"),
+        RegisterDef("Grid Power", 200, "W", 1, "int16", "power", "measurement", "mdi:transmission-tower"),
+        RegisterDef("PV1 Power", 300, "W", 1, "uint16", "power", "measurement", "mdi:solar-power"),
+        RegisterDef("PV2 Power", 301, "W", 1, "uint16", "power", "measurement", "mdi:solar-power"),
+        RegisterDef(
+            "Today Import",
+            400,
+            "kWh",
+            0.1,
+            "uint16",
+            "energy",
+            "total_increasing",
+            "mdi:transmission-tower-import",
+        ),
         # ... remaining registers
     ],
-
     # Derived sensors computed from other registers (no Modbus address of their own)
     computed_registers=[
         ComputedRegisterDef(
@@ -153,16 +160,15 @@ INVERTER = InverterDef(
             sources=["PV1 Power", "PV2 Power"],  # RegisterDef names to sum
         ),
     ],
-
     # read_blocks is OPTIONAL.
     # If omitted, blocks are auto-computed by grouping addresses with a gap <= 5.
     # Define explicitly for fine-grained control over Modbus reads
     # (useful when there are large address gaps between register groups).
     read_blocks=[
-        (100, 2),   # Battery SOC + next
-        (200, 1),   # Grid Power
-        (300, 2),   # PV1 + PV2 Power
-        (400, 1),   # Today Import
+        (100, 2),  # Battery SOC + next
+        (200, 1),  # Grid Power
+        (300, 2),  # PV1 + PV2 Power
+        (400, 1),  # Today Import
     ],
 )
 ```
@@ -174,7 +180,7 @@ from .brand_model import INVERTER as _BRAND_MODEL
 
 _ALL: list[InverterDef] = [
     _DEYE_SUN8K_SG05LP3,
-    _BRAND_MODEL,   # ← add here
+    _BRAND_MODEL,  # ← add here
 ]
 ```
 
